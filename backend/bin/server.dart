@@ -13,7 +13,7 @@ final _router = Router(notFoundHandler: _notFoundHandler)
   ..post('/api/v1/submit', _submitHandler);
 
 ///Header mặc định cho dữ liệu trả về dưới dạng JSON
-final _headers = {'Content-Type': 'application /json'};
+final _headers = {'Content-Type': 'application/json'};
 
 /// Xử lý các yêu cầu đến đường dẫn không được định nghĩa (404 Not Found)
 Response _notFoundHandler(Request req) {
@@ -37,10 +37,17 @@ Response _rootHandler(Request req) {
 
 /// Hàm xử lý yêu cầu tại đường dẫn '/api/v1/check'
 Response _checkHandler(Request req) {
-  return Response.ok(
-    json.encode({'message': 'Chào mừng bạn đến với ứng dụng web động'}),
-    headers: _headers,
-  );
+  try {
+    return Response.ok(
+      json.encode({'message': 'Chào mừng bạn đến với ứng dụng web động'}),
+      headers: _headers,
+    );
+  } catch (e) {
+    return Response.badRequest(
+      body: json.encode({'error': e.toString()}),
+      headers: _headers,
+    );
+  }
 }
 
 Response _echoHandler(Request request) {
