@@ -10,7 +10,8 @@ final _router = Router(notFoundHandler: _notFoundHandler)
   ..get('/', _rootHandler)
   ..get('/api/v1/check', _checkHandler)
   ..get('/echo/<message>', _echoHandler)
-  ..post('/api/v1/submit', _submitHandler);
+  ..post('/api/v1/submit', _submitHandler)
+  ..post('/api/v1/sendAge', _submitAge);
 
 ///Header mặc định cho dữ liệu trả về dưới dạng JSON
 final _headers = {'Content-Type': 'application/json'};
@@ -91,6 +92,48 @@ Future<Response> _submitHandler(Request req) async {
     final response = {'message': ' yêu cầu không hợp lệ. Lỗi ${e.toString()}'};
 
     // Trả về phản hồi với status 400
+    return Response.badRequest(
+      body: json.encode(response),
+      headers: _headers,
+    );
+  }
+}
+
+Future<Response> _submitAge(Request req) async {
+  try {
+    final payload = await req.readAsString();
+
+    final data = json.decode(payload);
+
+    final birth = data['age'] as String?;
+
+    if (birth != null && birth.isNotEmpty) {
+      final birthDate = DateTime.parse(birth);
+
+      final DateTime now = DateTime.now();
+      int age = now.year - birthDate.year;
+      if (now.month < birthDate.month ||
+          (now.month == birthDate.month && now.day < birthDate.day)) {
+        age--;
+      }
+
+      final response = {'message': 'Tuổi của bạn là : $age'};
+
+      return Response.ok(
+        json.encode(response),
+        headers: _headers,
+      );
+    } else {
+      final response = {'message': 'Vui lòng nhập ngày sinh của bạn'};
+
+      return Response.badRequest(
+        body: json.encode(response),
+        headers: _headers,
+      );
+    }
+  } catch (e) {
+    final response = {'message': ' yêu cầu không hợp lệ. Lỗi ${e.toString()}'};
+
     return Response.badRequest(
       body: json.encode(response),
       headers: _headers,

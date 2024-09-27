@@ -36,6 +36,8 @@ class _MyHomePageState extends State<MyHomePage> {
   /// Controller để lấy dữ liệu từ Widget TextField
   final controller = TextEditingController();
 
+  final ageController = TextEditingController();
+
   /// Biến để lưu thông điệp phản hồi từ server
   String responseMessage = '';
 
@@ -81,6 +83,71 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<void> selectBirthDate(BuildContext context) async {
+    DateTime? birthDate;
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: birthDate ?? DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      helpText: 'Chọn ngày sinh',
+      cancelText: 'Hủy',
+      confirmText: 'Xác nhận',
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        birthDate = pickedDate;
+        String dateString = pickedDate.toString().split(' ')[0];
+        ageController.text = dateString;
+      });
+    }
+  }
+
+  // Function to calculate age
+  int calculateAge(DateTime birthDate) {
+    final DateTime now = DateTime.now();
+    int age = now.year - birthDate.year;
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  Future<void> sendAge() async {
+    final age = ageController.text;
+
+    ageController.clear();
+
+    if (age.isNotEmpty) {
+      final birthDate = DateTime.parse(age);
+      final url = Uri.parse('http://localhost:8080/api/v1/sendAge');
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({'age': birthDate.toIso8601String()}),
+        );
+
+        if (response.body.isNotEmpty) {
+          final data = json.decode(response.body);
+          setState(() {
+            responseMessage = data['message'];
+          });
+        } else {
+          setState(() {
+            responseMessage = 'Vui lòng nhập tuổi !';
+          });
+        }
+      } catch (e) {
+        setState(() {
+          responseMessage = 'Đã xảy ra lỗi ${e.toString()}';
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,10 +160,21 @@ class _MyHomePageState extends State<MyHomePage> {
               controller: controller,
               decoration: const InputDecoration(labelText: 'Tên'),
             ),
+            TextField(
+              controller: ageController,
+              readOnly: true, // Make the age field read-only
+              decoration: const InputDecoration(labelText: 'Tuổi'),
+              onTap: () => selectBirthDate(context),
+            ),
             const SizedBox(height: 20),
             FilledButton(
               onPressed: sendName,
               child: const Text('Gửi'),
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: sendAge,
+              child: const Text('Lấy tuổi'),
             ),
             // Hiển thị thông điệp phản hồi từ server
             Text(
